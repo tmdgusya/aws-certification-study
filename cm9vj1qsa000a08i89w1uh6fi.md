@@ -5,6 +5,7 @@ seoDescription: "Python에서 SQLAlchemy를 사용한 데이터베이스 연결 
 datePublished: Thu Apr 24 2025 15:38:16 GMT+0000 (Coordinated Universal Time)
 cuid: cm9vj1qsa000a08i89w1uh6fi
 slug: sqlalchemy-1-connection-result
+cover: https://cdn.hashnode.com/res/hashnode/image/upload/v1745509491052/df66f978-9f62-42b1-a18e-1b769ed83fe1.png
 tags: python, orm, session, sqlalchemy, fastapi
 
 ---
