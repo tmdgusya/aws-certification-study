@@ -16,15 +16,11 @@ SQLAlchemy는 파이썬 개발자들에게 강력한 ORM(Object-Relational Mappe
 
 먼저 실습을 위해 SQLAlchemy 엔진과 ORM 모델을 설정합니다. SQLite 메모리 데이터베이스를 사용하고, `User`와 `Address` 두 개의 테이블을 정의합니다.
 
-Python
-
 ```python
 from sqlalchemy import create_engine
 
 engine = create_engine("sqlite+pysqlite:///:memory:", echo=True)
 ```
-
-Python
 
 ```python
 from typing import List
@@ -233,7 +229,7 @@ with Session(engine) as sess:
 
 > Yeee…no. It’s somewhat used as a cache, in that it implements the identity map pattern, and stores objects keyed to their primary key. However, it doesn’t do any kind of query caching. This means, if you say session.query(Foo).filter\_by(name='bar'), even if Foo(name='bar') is right there, in the identity map, the session has no idea about that. It has to issue SQL to the database, get the rows back, and then when it sees the primary key in the row, then it can look in the local identity map and see that the object is already there. It’s only when you say query.get({some primary key}) that the Session doesn’t have to issue a query.
 
-요약하자면, `identity_map`은 기본 키를 기반으로 객체를 저장하고 조회하는 **'아이덴티티 맵 패턴'**을 구현한 것이지, 쿼리 자체를 캐싱하는 기능은 아닙니다. `filter_by` 등 다른 조건으로 쿼리하면 `identity_map`에 해당 객체가 있더라도 SQL을 실행해야 합니다. 오직 `Session.get()`만이 `identity_map`을 직접 활용하여 SQL 실행을 건너뛸 수 있습니다.
+요약하자면, `identity_map`은 기본 키를 기반으로 객체를 저장하고 조회하는 \*\*'아이덴티티 맵 패턴'\*\*을 구현한 것이지, 쿼리 자체를 캐싱하는 기능은 아닙니다. `filter_by` 등 다른 조건으로 쿼리하면 `identity_map`에 해당 객체가 있더라도 SQL을 실행해야 합니다. 오직 `Session.get()`만이 `identity_map`을 직접 활용하여 SQL 실행을 건너뛸 수 있습니다.
 
 또한, `identity_map`은 객체에 대한 약한 참조 ([weak reference](https://docs.python.org/ko/3.13/library/weakref.html))를 사용하여 객체를 관리하는 경우가 많습니다. 이는 파이썬의 가비지 컬렉션(Garbage Collection, GC)에 의해 세션 내에서 더 이상 강력하게 참조되지 않는 객체가 `identity_map`에서 제거될 수 있음을 의미합니다. 따라서 동일 세션 내라고 할지라도 특정 시점에는 `identity_map`에 객체가 존재하지 않을 수 있다는 점도 유념해야 합니다.
 
