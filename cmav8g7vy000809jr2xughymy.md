@@ -5,6 +5,7 @@ seoDescription: "Python의 GIL을 통해 CPU-Bound 작업의 병목 현상을 �
 datePublished: Mon May 19 2025 15:21:18 GMT+0000 (Coordinated Universal Time)
 cuid: cmav8g7vy000809jr2xughymy
 slug: python-gil
+ogImage: https://cdn.hashnode.com/res/hashnode/image/upload/v1747668221854/b0e52261-e000-47e3-a9fe-8f948bda4ec1.png
 tags: python, gil, global-interpreter-lock
 
 ---
