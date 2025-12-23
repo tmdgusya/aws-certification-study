@@ -1,0 +1,108 @@
+---
+title: "사진에서 경계를 찾는 방법"
+datePublished: Tue Dec 23 2025 05:45:51 GMT+0000 (Coordinated Universal Time)
+cuid: cmji5vvop000002ju3iya8244
+slug: 7iks7kee7jeq7iscioqyveqzhoulvcdssl7ripqg67cp67kv
+tags: python-contours-image
+
+---
+
+![generated_image.png](https://storage.googleapis.com/roach-wiki/images/afbad3c2-4c20-49a4-acc4-e80bdfb142cf.webp align="left")
+
+최근 회사에서 이미지와 관련된 Cropping 문제로 운영 공수가 많이 들어간다는 요구사항을 받았다. 그래서 여러가지 방법을 고안했는데, 머릿속에 딱 든 생각은 두 가지 정도였다. 첫 번째로는 경계를 지니고 있는 사진들은 보통 일정 공백을 지니고 있는데 이를 수학적으로 계산해내는 방법, 두 번째로는 LLM을 통해 크롭핑할 영역을 분류하는 방법이다.
+
+일단 운영상의 리소스나 결과물의 유지보수를 생각했을 때 후자인 LLM의 경우, 사실 완벽한 해법이라고 항상 생각하지는 않는다. 생성형 모델에게 완벽한 답변을 요구하게 되면 오히려 더 많은 공수가 들어가는 경우가 많고, 모델이나 프롬프트의 성능/퀄리티에 따라 결과가 쉽게 흔들릴 수 있다. 이건 결국 AI 전문가가 없는 팀에서는 유지보수 측면에서 리스크로 작용할 가능성이 크다. 따라서, 구분이 쉬운 사진에 대해서는 기존에 잘 연구되어 있는 알고리즘을 활용해 멱등성 있는 결과를 확보하는 것이 더 옳다고 판단했다.
+
+## 수학적으로 계산?
+
+그렇다면 이걸 어떻게 수학적으로 계산할 수 있을까? 예전에 배민 해커톤 때 cv2를 잠깐 건드렸던 기억 덕분에 떠올랐던 방법이 바로 **경계선(Contours) 알고리즘**이다.
+
+컨투어 알고리즘은 Binary 또는 흑백화된 이미지를 기반으로 동작한다. 즉, 경계선을 찾을 때 색깔 정보는 필요 없고, 밝기의 변화(값의 차이)만 있으면 된다. 그래서 경계선을 찾는 데 필요하지 않은 채널을 줄이는(차원 축소하는) 과정이 먼저 필요했다.
+
+또한 대부분의 사진들이 배경이 밝은 편이라, 특정 임계값 기준으로 이진화를 시켜주면 경계값을 쉽게 추출할 수 있다고 생각했다.
+
+### 흑백화(Grayscale)
+
+![image.png](https://storage.googleapis.com/roach-wiki/images/e3a7b2f9-f9c6-4c92-a6c6-82add76694a4.webp align="left")
+
+Grayscale은 쉽게 말하면 흑백화인데, 사진은 **R,G,B의 3채널**로 이루어져 있다. 하지만 실제로 경계선을 구분하는 과정에서는 색깔 정보가 크게 필요 없다. 즉, 불필요한 정보는 버리고, **밝기(intensity)** 정보만 남기는 게 더 이득이다.
+
+이렇게 Grayscale을 통해 3채널 → 1채널로 차원축소를 해주면, 컨투어·이진화·모폴로지 같은 후처리 단계가 더 안정적으로 동작하게 된다.
+
+코드는 아주 간단하다.
+
+```python
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+```
+
+또한 상황에 따라 RGB → Gray로 변환할 때 사용하는 계수를 커스터마이징해볼 수도 있다. 작업 목적에 따라 밝기 가중치를 더 주거나 덜 줄 수도 있으니, 다양한 계수를 실험해보는 것도 좋은 방법이다.
+
+### 이진화
+
+![image.png](https://storage.googleapis.com/roach-wiki/images/d5102711-6f44-4bf8-8a99-3deeede0a762.webp align="left")
+
+이후에는 이진화 과정이 필요하다. 이진화는 특정 임계값(Threshold)을 기준으로 픽셀을 흑/백 두 값으로만 나누는 과정이다.
+
+수도 코드로는 아래와 같다.
+
+```python
+if gray[y][x] > threshold:
+    thresh[y][x] = 0 # 흑백
+else:
+    thresh[y][x] = 255 # 백
+```
+
+cv2 가 제공하는 함수를 사용하면 아래와 같이 쉽게 이 과정을 진행할 수 있다.
+
+```python
+_, thresh = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)
+```
+
+여기서 THRESH\_BINARY\_INV를 쓴 이유는, 밝은 배경은 0(검정), 내용물은 255(백색) 으로 만들기 위해서다. 이렇게 해야 이후 단계에서 **“내용이 있는 덩어리(blob)”** 를 쉽게 묶을 수 있다.
+
+### Dilation
+
+![image.png](https://storage.googleapis.com/roach-wiki/images/2429ede6-0cb5-4a62-b655-279af250d195.webp align="left")
+
+이진화의 결과를 보면 알겠지만 작은 노이즈나 끊어진 영역들이 보통 존재한다. 예를 들면, 옷 사진이나 인물 사진 같은 경우 내부에 작은 빈 공간이나 패턴들이 있어서 하나의 큰 영역으로 인식되지 않는 경우가 많다.
+
+이때 사용하는 것이 **Morphology - Dilation(팽창)** 이다.
+
+팽창은 255(흰색) 픽셀을 주변으로 퍼뜨려 조각난 부분들을 하나의 덩어리로 묶어주는 역할을 한다.
+
+특히 세로로 긴 이미지들은 위아래 이미지 사이에 약간의 흰 여백이 존재하고, 그 여백만 잘 검출하면 자연스럽게 **한 장씩 분리되는 형태**가 만들어진다. 따라서 Dilate를 적절한 커널 크기로 적용하면 구간 단위로 깔끔하게 묶여, 이후 컨투어 탐지 시 **이미지 단위의 블록**을 찾기 쉬워진다. (CNN 의 kernel 을 공부해봤다면 아마 이 개념이 익숙할 것이다.)
+
+코드로는 아래와 같이 작성해볼수있다.
+
+```python
+kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (100, 4)) 
+dilated = cv2.dilate(thresh, kernel, iterations=2)
+```
+
+**팽창(Dilate) 연산**은 커널이 겹치는 영역 중 1개라도 흰색(255)이 있으면 그 커널의 중심 픽셀도 255로 바뀌는 방식이다. 즉, 커널 영역 내 흰색 픽셀의 존재 여부를 기준으로 주변을 흰색으로 확장한다.
+
+이 Kernel 도 결국에 튜닝을 해서 찾아야 한다. 이 값을 잡을때 기본적으로 세로형 이미지이기 때문에 가로픽셀에서 합칠게 더 많아도 생각해서 가로를 100, 세로를 4를 주었다. 여러 이미지를 통해 디버깅을 진행하다보면 적당한 값을 찾을 수 있다.
+
+### 경계선(Contours) 찾기
+
+![image.png](https://storage.googleapis.com/roach-wiki/images/69fef2b6-c23e-4695-b904-acb2adaaa20b.webp align="left")
+
+이제 마지막 단계는 경계선(Contours)을 찾는 것이다. Dilate까지 끝난 결과물에서는 이미지 내부의 유효한 영역들이 하나의 큰 덩어리(blob) 형태로 묶여 있다. 따라서 우리는 내부의 윤곽선은 상관없고 가장 바깥쪽 윤곽선을 찾으면 되므로 `RETR_EXTERNAL` 그리고 직사각형의 점만 얻으며 되므로 윤곽선 점들을 우리 상황에 맞게 효율적으로 반환하는 `CHAIN_APPROX_SIMPLE` 옵션을 사용하면, 각 “콘텐츠 블록”의 사각형 영역을 쉽게 얻을 수 있다.
+
+이렇게 얻은 bounding box는 (x, y, w, h) 형태로 반환되는데, 여기서 우리는 특히 y와 h, 즉 “세로 위치와 높이”만 활용해서 세로로 긴 이미지 내에서 “각각 분리되어야 할 이미지”들을 판단할 수 있다.
+
+## 결과
+
+![image.png](https://storage.googleapis.com/roach-wiki/images/fabfda50-2827-4592-9af2-973a00ca0e98.webp align="left")
+
+![image.png](https://storage.googleapis.com/roach-wiki/images/2ea4d684-ca5a-48e1-bd1e-5745e2c05a4d.webp align="left")
+
+![image.png](https://storage.googleapis.com/roach-wiki/images/7720764a-f8e9-4ea8-bbf8-f8b82e6cce7f.webp align="left")
+
+최종적으로는 위와 같이, 하나의 세로로 긴 이미지 안에 여러 장의 독립적인 이미지가 붙어 있을 경우, 각 영역을 조건에만 맞는다면 정확하게 검출해 개별 이미지로 분리할 수 있는 구조가 완성된다.
+
+중간 과정에서 Grayscale → 이진화 → Dilate → Contours 로 이어지는 처리과정이 **“불필요한 정보 제거 → 유효한 영역 강조 → 덩어리 묶기 → 외곽선 검출”** 이라는 논리적 흐름으로 이어지기 때문에, 단순한 이미지라면 LLM 기반 접근보다 훨씬 안정적이고 유지보수가 쉬운 방식으로 동작할 수 있게 되었다.
+
+물론 배경이 복잡하거나 조명 편차가 심한 이미지에서는 Threshold나 커널 사이즈를 별도로 튜닝해야 한다. 하지만 단순한 형태의 세로형 이미지라면 이 파이프라인이 가장 안정적이고 재현성 있는 접근이라고 판단했다. 경계가 명확하지 않고 모호한 이미지 또한 이 알고리즘을 통한 분리가 불가능했다.
+
+그 부분은 아마 인공지능을 이용하거나 다른 방법을 찾아야 할거 같다. 이제 이 부분을 파이프라인에 넣어 운영리소스의 공수를 효율적으로 줄이는 방법만 찾으면 될거 같다.
