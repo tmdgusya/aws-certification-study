@@ -58,7 +58,7 @@ func (p *Pipeline) ToGrayScale() {
 
 이렇게 하면 아래와 같이 이미지가 회색으로 변하는 것을 확인할 수 있다.
 
-![image.png](https://storage.googleapis.com/roach-wiki/images/0c134b0e-0a51-4ca3-b147-a4ac1b40a812.webp align="left")
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1767419343887/2d127865-3fd2-417b-8155-32eb6e62d05f.png align="center")
 
 ## 이미지를 압축해보기
 
@@ -105,11 +105,11 @@ func (p *Pipeline) DivideIntoBlock(blocksize int) [][]float64 {
 
 코드 자체는 어려운점이 없다. blocksize 만큼 `y` 축과 `x` 축으로 움직이며 해당 블럭내에서 색상값을 다 더하고, 모든 개수를 센다음 평균값을 내어 평균값으로 압축한다.
 
-![image.png](https://storage.googleapis.com/roach-wiki/images/7c372730-c497-45e8-87a2-34bf4368ceb2.webp align="left")
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1767419372523/e8f17501-9fb4-463e-b284-c40cf877fc33.png align="center")
 
 CNN 을 해봤다면 아마 익숙할 것이다. 이런 방식으로 압축하게 되면 이미지가 아래와 같은 형태가 된다.
 
-![image.png](https://storage.googleapis.com/roach-wiki/images/5f7cfd1c-32d2-454e-8281-2e1445377a58.webp align="left")
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1767419368169/a4e5edaf-d8a2-41f0-b76f-2c1abcba09ee.png align="center")
 
 시력이 좀 안좋아진거 같긴 하지만, 그래도 흐릿흐릿하게 Gopher 의 실루엣 구조자체는 보이는 것을 확인할 수 있다.
 
@@ -163,7 +163,7 @@ func (p *Pipeline) CalculateBandMedians(blocks [][]float64) []float64 {
 
 코드는 전체를 다 볼 필요는 없고 `for-loop` 안에만 보면 된다. y 축 기준으로 밴드의 크기 만큼 루프를 진행하며 해당 row 에 있는 값들을 모두 파악해서 bandValues 에 저장하고 **중앙 값보다 크다면** **Green(0, 200, 0, 255)** 를 아니라면 **빨강(200, 0, 0, 255)** 로 칠한다.
 
-![image.png](https://storage.googleapis.com/roach-wiki/images/0bb780f2-c53b-4848-bcc7-cdb4dda3c661.webp align="left")
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1767419403565/d9cd03a5-2467-497c-98ea-bebc386aad99.png align="center")
 
 실제로 수행하고 나면 이미지가 위와 같이 변한다.
 
