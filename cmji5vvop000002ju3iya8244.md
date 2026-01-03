@@ -7,7 +7,7 @@ tags: python-contours-image
 
 ---
 
-![generated_image.png](https://storage.googleapis.com/roach-wiki/images/afbad3c2-4c20-49a4-acc4-e80bdfb142cf.webp align="left")
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1767419058866/0e1a2042-d6bd-44d4-a0ce-307dba5f2546.png align="center")
 
 최근 회사에서 이미지와 관련된 Cropping 문제로 운영 공수가 많이 들어간다는 요구사항을 받았다. 그래서 여러가지 방법을 고안했는데, 머릿속에 딱 든 생각은 두 가지 정도였다. 첫 번째로는 경계를 지니고 있는 사진들은 보통 일정 공백을 지니고 있는데 이를 수학적으로 계산해내는 방법, 두 번째로는 LLM을 통해 크롭핑할 영역을 분류하는 방법이다.
 
@@ -23,7 +23,7 @@ tags: python-contours-image
 
 ### 흑백화(Grayscale)
 
-![image.png](https://storage.googleapis.com/roach-wiki/images/e3a7b2f9-f9c6-4c92-a6c6-82add76694a4.webp align="left")
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1767419213016/639e9ff0-630c-40d1-a9db-f3bea63aef2c.png align="center")
 
 Grayscale은 쉽게 말하면 흑백화인데, 사진은 **R,G,B의 3채널**로 이루어져 있다. 하지만 실제로 경계선을 구분하는 과정에서는 색깔 정보가 크게 필요 없다. 즉, 불필요한 정보는 버리고, **밝기(intensity)** 정보만 남기는 게 더 이득이다.
 
@@ -39,9 +39,9 @@ gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 ### 이진화
 
-![image.png](https://storage.googleapis.com/roach-wiki/images/d5102711-6f44-4bf8-8a99-3deeede0a762.webp align="left")
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1767419258115/e5eeafd3-d804-4e27-a2cc-5cc6389b0349.png align="center")
 
-이후에는 이진화 과정이 필요하다. 이진화는 특정 임계값(Threshold)을 기준으로 픽셀을 흑/백 두 값으로만 나누는 과정이다.
+이후에는 이진화 과정이 필요하다. **이진화는 특정 임계값(Threshold)**을 기준으로 픽셀을 흑/백 두 값으로만 나누는 과정이다.
 
 수도 코드로는 아래와 같다.
 
@@ -62,7 +62,7 @@ _, thresh = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)
 
 ### Dilation
 
-![image.png](https://storage.googleapis.com/roach-wiki/images/2429ede6-0cb5-4a62-b655-279af250d195.webp align="left")
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1767419269999/4e215591-c8ad-47c0-9cf8-2a3f9d6e2345.png align="center")
 
 이진화의 결과를 보면 알겠지만 작은 노이즈나 끊어진 영역들이 보통 존재한다. 예를 들면, 옷 사진이나 인물 사진 같은 경우 내부에 작은 빈 공간이나 패턴들이 있어서 하나의 큰 영역으로 인식되지 않는 경우가 많다.
 
@@ -85,7 +85,7 @@ dilated = cv2.dilate(thresh, kernel, iterations=2)
 
 ### 경계선(Contours) 찾기
 
-![image.png](https://storage.googleapis.com/roach-wiki/images/69fef2b6-c23e-4695-b904-acb2adaaa20b.webp align="left")
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1767419283613/76dce861-d4a9-4d7c-a8d4-f61949e2846e.png align="center")
 
 이제 마지막 단계는 경계선(Contours)을 찾는 것이다. Dilate까지 끝난 결과물에서는 이미지 내부의 유효한 영역들이 하나의 큰 덩어리(blob) 형태로 묶여 있다. 따라서 우리는 내부의 윤곽선은 상관없고 가장 바깥쪽 윤곽선을 찾으면 되므로 `RETR_EXTERNAL` 그리고 직사각형의 점만 얻으며 되므로 윤곽선 점들을 우리 상황에 맞게 효율적으로 반환하는 `CHAIN_APPROX_SIMPLE` 옵션을 사용하면, 각 “콘텐츠 블록”의 사각형 영역을 쉽게 얻을 수 있다.
 
@@ -93,11 +93,9 @@ dilated = cv2.dilate(thresh, kernel, iterations=2)
 
 ## 결과
 
-![image.png](https://storage.googleapis.com/roach-wiki/images/fabfda50-2827-4592-9af2-973a00ca0e98.webp align="left")
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1767419296094/e7018a9f-c409-4009-91f8-d79f23e32378.png align="center")
 
-![image.png](https://storage.googleapis.com/roach-wiki/images/2ea4d684-ca5a-48e1-bd1e-5745e2c05a4d.webp align="left")
-
-![image.png](https://storage.googleapis.com/roach-wiki/images/7720764a-f8e9-4ea8-bbf8-f8b82e6cce7f.webp align="left")
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1767419300205/9764c199-83b3-496c-b08c-0f075a0ec770.png align="center")
 
 최종적으로는 위와 같이, 하나의 세로로 긴 이미지 안에 여러 장의 독립적인 이미지가 붙어 있을 경우, 각 영역을 조건에만 맞는다면 정확하게 검출해 개별 이미지로 분리할 수 있는 구조가 완성된다.
 
