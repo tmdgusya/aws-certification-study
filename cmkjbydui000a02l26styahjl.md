@@ -132,7 +132,7 @@ VACUUM ANALYZE logs;
 CREATE INDEX idx_include ON logs(level, service) INCLUDE (message);
 ```
 
-위와 같이 INCLUDE 를 통해 `message` 를 추가하게 되면 종단 노드에만 잡혀서 아주 컴팩트한 인덱스가 되고, INSERT 와 UPDATE 시 비용이 덜 들게 됩니다. 실제로 한번 추가하고 난 뒤에 Index 사이즈를 보도록 합시다.
+위와 같이 INCLUDE 를 통해 `message` 를 추가하게 되면 종단 노드에만 잡혀서 아주 컴팩트한 인덱스가 되고, INSERT 와 UPDATE 시 비용이 덜 들게 된다고 생각할 수 있습니다. 실제 테스트를 위해 한번 추가하고 난 뒤에 Index 사이즈를 보도록 합시다.
 
 ```sql
 SELECT
